@@ -2,15 +2,12 @@ name: 🐧 Ruff Check
 on:
   push:
   pull_request:
-  schedule:
-    - cron: '0 22 * * *'
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   ruff-normal-ci:
-
     runs-on: ubuntu-24.04
 
     strategy:
@@ -242,6 +239,7 @@ jobs:
         if: matrix.name != 'DEBUG_1'
         run: |
           git clone https://github.com/astral-sh/ruff.git ruff
+          git checkout dhruv/token-rules-with-syntax-errors
           cd ruff
           sed -i '/\[profile.release\]/a overflow-checks = true' Cargo.toml
           sed -i '/\[profile.release\]/a debug-assertions = true' Cargo.toml
@@ -256,6 +254,7 @@ jobs:
         if: matrix.name == 'DEBUG_1'
         run: |
           git clone https://github.com/astral-sh/ruff.git ruff
+          git checkout dhruv/token-rules-with-syntax-errors
           cd ruff
           sed -i '/\[profile.release\]/a overflow-checks = true' Cargo.toml
           sd "MAX_ITERATIONS: usize = 100;" "MAX_ITERATIONS: usize = 500;" crates/ruff_linter/src/linter.rs
@@ -291,17 +290,17 @@ jobs:
       - name: Download and prepare python data files
         run: |
           CURR_DIR=$(pwd)
-          
+
           GENERATE_BROKEN_FILES=${{ matrix.generate-broken-files }}
-          
+
           if [ "$GENERATE_BROKEN_FILES" = "true" ]; then
             cd /opt/VALID_FILES_DIR
           else
             cd /opt/POSSIBLY_BROKEN_FILES_DIR
           fi
-          
+
           python3 "$CURR_DIR/download_helper.py" "${{ matrix.files }}"
-          
+
           cd $CURR_DIR
 
       - name: Run app
@@ -385,4 +384,3 @@ jobs:
       - name: Exit when found broken files
         run: |
           [ "$(ls -A /opt/BROKEN_FILES_DIR)" ] && exit 1 || true
-
